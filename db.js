@@ -15,8 +15,3 @@ const pool = new Pool({
 module.exports = {
     query: (text, params) => pool.query(text, params)
 };
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server berjalan di port ${PORT}`);
-});

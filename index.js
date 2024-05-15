@@ -4,16 +4,22 @@ const app = express();
 const port = 3200;
 const { Pool } = require("pg");
 
+const { PrismaClient } = require("@prisma/client")
+const prisma = new PrismaClient()
+
 app.use(express.static("public"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+
 app.get("/students", async(req, res) => {
     try {
-        const result = await db.query("SELECT * FROM students");
+
+        const allStudents = await prisma.students.findMany();
+
         res.status(200).json({
             status: "success get the database",
-            data: result.rows,
+            data: allStudents,
         });
     } catch (err) {
         console.error(err);
@@ -21,35 +27,16 @@ app.get("/students", async(req, res) => {
     }
 });
 
-app.get("/students/:id", (req, res) => {
-    const studentId = req.params.id;
-    db.query(`SELECT * FROM students WHERE id = ${studentId}`, (err, result) => {
-        if (err) {
-            console.error(err);
-            res.status(500).send("Internal Server Error");
-        } else {
-            if (result.rows.length === 0) {
-                res.status(404).json({
-                    status: "error",
-                    message: "Data mahasiswa tidak ditemukan",
-                });
-            } else {
-                res.status(200).json({
-                    status: "success",
-                    data: result.rows[0],
-                });
-            }
-        }
-    });
-});
-
 app.post("/students", async(req, res) => {
-    const { name, address } = req.body;
-
     try {
-        const result = await db.query(
-            `INSERT INTO students (name, address) VALUES ('${name}', '${address}')`
-        );
+        const { name, address } = req.body;
+
+        await prisma.students.create({
+            data: {
+                name: name,
+                address: address,
+            },
+        });
 
         res.status(200).json({
             status: "success",
@@ -61,39 +48,75 @@ app.post("/students", async(req, res) => {
     }
 });
 
-app.put("/students/:id", (req, res) => {
+app.get("/students/:id", async(req, res) => {
     const studentId = req.params.id;
-    const { name, address } = req.body;
 
-    db.query(
-        `UPDATE students SET name = 'Andreas', address = 'Bitung' WHERE id = ${studentId}`,
-        (err, result) => {
-            if (err) {
-                console.error(err);
-                res.status(500).send("Internal Server Error");
-            } else {
-                res.status(200).json({
-                    status: "success",
-                    message: "Data berhasil diperbarui",
-                });
-            }
-        }
-    );
-});
+    try {
+        const student = await prisma.students.findUnique({
+            where: {
+                id: parseInt(studentId),
+            },
+        });
 
-app.delete("/students/:id", (req, res) => {
-    const studentId = req.params.id;
-    db.query(`DELETE FROM students WHERE id = ${studentId}`, (err, result) => {
-        if (err) {
-            console.error(err);
-            res.status(500).send("Internal Server Error");
+        if (!student) {
+            res.status(404).json({
+                status: "error",
+                message: "Data mahasiswa tidak ditemukan",
+            });
         } else {
             res.status(200).json({
                 status: "success",
-                message: "Data berhasil dihapus",
+                data: student,
             });
         }
-    });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Internal Server Error");
+    }
+});
+
+app.put("/students/:id", async(req, res) => {
+    const studentId = req.params.id;
+    const { name, address } = req.body;
+
+    try {
+        await prisma.students.update({
+            where: {
+                id: parseInt(studentId),
+            },
+            data: {
+                name: name,
+                address: address,
+            },
+        });
+
+        res.status(200).json({
+            status: "success",
+            message: "Data berhasil diperbarui",
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Internal Server Error");
+    }
+});
+
+app.delete("/students/:id", async(req, res) => {
+    const studentId = req.params.id;
+    try {
+        await prisma.students.deleteMany({
+            where: {
+                id: parseInt(studentId),
+            },
+        });
+
+        res.status(200).json({
+            status: "success",
+            message: "Data berhasil dihapus",
+        });
+    } catch (error) {
+        console.error(err);
+        res.status(500).send("Internal Server Error");
+    }
 });
 
 app.listen(port, () =>
