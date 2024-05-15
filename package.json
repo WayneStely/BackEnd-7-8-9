@@ -1,0 +1,16 @@
+{
+    "name": "tugas2",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "db": "^6.0.1",
+        "express": "^4.18.3",
+        "pg": "^8.11.3"
+    }
+}
